@@ -8,6 +8,22 @@
 __author__ = 'davidbyttow@google.com (David Byttow)'
 
 
-# TODO(davidbyttow): Add unit tests. Currently this is not so easy because
+import unittest
+
+import robot
+
+
+# TODO(davidbyttow): Add more unit tests. Currently this is not so easy because
 # robot module depends on app-engine specific packages and this unit test
 # is platform agnostic.
+
+
+class TestRobotCapabilitiesHeader(unittest.TestCase):
+  def setUp(self):
+    self.robot = robot.Robot()
+
+  def testCapabilitiesXml(self):
+    noop_robot = robot.Robot()
+    caps_handler = robot.RobotCapabilitiesHandler(noop_robot)
+    xml = caps_handler._CapabilitiesXml()
+    self.assertEqual('', xml)

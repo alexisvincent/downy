@@ -32,8 +32,7 @@ class RobotCapabilitiesHandler(webapp.RequestHandler):
     """Initializes this handler with a specific robot."""
     self._robot = robot
 
-  def get(self):
-    """Handles HTTP GET requesst."""
+  def _CapabilitiesXml(self):
     lines = ['<w:capabilities>']
     for capability in self._robot.GetCapabilities():
       lines.append('  <w:capability name="%s"/>' % capability)
@@ -52,9 +51,13 @@ class RobotCapabilitiesHandler(webapp.RequestHandler):
     if robot.image_url:
       robot_attrs += ' profileurl="%s"' % robot.profile_url
     lines.append('<w:profile%s/>' % robot_attrs)
-    xml = ('<?xml version="1.0"?>\n'
-           '<w:robot xmlns:w="http://www.google.com/fake/ns/whee">\n'
-           '%s\n</w:robot>\n') % ('\n'.join(lines))
+    return ('<?xml version="1.0"?>\n'
+            '<w:robot xmlns:w="http://www.google.com/fake/ns/whee">\n'
+            '%s\n</w:robot>\n') % ('\n'.join(lines))
+
+  def get(self):
+    """Handles HTTP GET request."""
+    xml = self._CapabilitiesXml()
     self.response.headers['Content-Type'] = 'text/xml'
     self.response.out.write(xml)
 
