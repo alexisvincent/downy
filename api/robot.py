@@ -19,8 +19,6 @@ import traceback
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
-import ops
-import util
 import robot_abstract
 
 
@@ -103,48 +101,7 @@ def RobotHandlerFactory(cls, robot):
   return CreateRobotHandler
 
 
-class RobotListener(object):
-  """Listener interface for robot events.
-
-  The RobotListener is a high-level construct that hides away the details
-  of events. Instead, a client will derive from this class and register
-  it with the robot. All event handlers are automatically registered. When
-  a relevant event comes in, logic is applied based on the incoming data and
-  the appropriate function is invoked.
-
-  For example:
-    If the user implements the "OnRobotAdded" method, the OnParticipantChanged
-    method of their subclass, this will automatically register the
-    events.WAVELET_PARTICIPANTS_CHANGED handler and respond to any events
-    that add the robot.
-
-    class MyRobotListener(robot.RobotListener):
-
-      def OnRobotAdded(self):
-        wavelet = self.context.GetRootWavelet()
-        blip = wavelet.CreateBlip()
-        blip.GetDocument.SetText("Thanks for adding me!")
-
-    robot = robots.Robot()
-    robot.RegisterListener(MyRobotListener)
-    robot.Run()
-
-  TODO(davidbyttow): Implement this functionality.
-  """
-
-  def __init__(self):
-    pass
-
-  def OnRobotAdded(self):
-    # TODO(davidbyttow): Implement.
-    pass
-
-  def OnRobotRemoved(self):
-    # TODO(davidbyttow): Implement.
-    pass
-
-
-class Robot(object):
+class Robot(robot_abstract.Robot):
   """Robot class used to setup this application.
 
   A robot is typically setup in the following steps:
@@ -159,47 +116,6 @@ class Robot(object):
     robot.RegisterHandler(WAVELET_PARTICIPANTS_CHANGED, KillParticipant)
     robot.Run()
   """
-
-  def __init__(self, name, image_url=None, profile_url=None):
-    """Initializes self with robot information."""
-    self.__handlers = {}
-    self.name = name
-    self.image_url = image_url
-    self.profile_url = profile_url
-    self.cron_jobs = []
-
-  def RegisterHandler(self, event_type, handler):
-    """Registers a handler on a specific event type.
-
-    Multiple handlers may be registered on a single event type and are
-    guaranteed to be called order.
-
-    The handler takes two arguments, the event properties and the Context of
-    this session. For example:
-
-    def OnParticipantsChanged(properties, context):
-      pass
-
-    Args:
-      event_type: An event type to listen for.
-      handler: A function handler which takes two arguments, event properties
-          and the Context of this session.
-    """
-    self.__handlers.setdefault(event_type, []).append(handler)
-
-
-  def RegisterCronJob(self, path, seconds):
-    """Registers a cron job to surface in capabilities.xml."""
-    self.cron_jobs.append((path, seconds))
-
-  def _HandleEvent(self, event, context):
-    """Calls all of the handlers associated with an event."""
-    for handler in self.__handlers.get(event.type, []):
-      handler(event.properties, context)
-
-  def GetCapabilities(self):
-    """Returns a list of the event types that we are interested in."""
-    return self.__handlers.keys()
 
   def Run(self, debug=False):
     """Sets up the webapp handlers for this robot and starts listening.

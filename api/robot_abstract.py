@@ -15,6 +15,7 @@ __author__ = 'davidbyttow@google.com (David Byttow)'
 import logging
 import simplejson
 
+import events
 import ops
 import util
 
@@ -42,7 +43,7 @@ def CapabilitiesXml(robot):
           '%s\n</w:robot>\n') % ('\n'.join(lines))
 
 
-def ParseJSONBody(self, json_body):
+def ParseJSONBody(json_body):
   """Parse a JSON string and return a context and an event list."""
   json = simplejson.loads(json_body)
   logging.info('Incoming: ' + str(json))
@@ -51,19 +52,56 @@ def ParseJSONBody(self, json_body):
   data = util.CollapseJavaCollections(json)
 
   context = ops.CreateContext(data)
-  events = []
-  for event_data in data['events']:
-    event = events.Event(event_data)
-    if event.type:
-      events.append(event)
-
-  return context, events
+  event_list = [events.Event(event_data) for event_data in data['events']]
+  event_list = filter(lambda event: event.type, event_list)
+  return context, event_list
 
 
-def SerializeContext(self, context):
+def SerializeContext(context):
   """Return a JSON string representing the given context."""
   context_dict = util.Serialize(context)
   return simplejson.dumps(context_dict)
+
+
+class RobotListener(object):
+  """Listener interface for robot events.
+
+  The RobotListener is a high-level construct that hides away the details
+  of events. Instead, a client will derive from this class and register
+  it with the robot. All event handlers are automatically registered. When
+  a relevant event comes in, logic is applied based on the incoming data and
+  the appropriate function is invoked.
+
+  For example:
+    If the user implements the "OnRobotAdded" method, the OnParticipantChanged
+    method of their subclass, this will automatically register the
+    events.WAVELET_PARTICIPANTS_CHANGED handler and respond to any events
+    that add the robot.
+
+    class MyRobotListener(robot.RobotListener):
+
+      def OnRobotAdded(self):
+        wavelet = self.context.GetRootWavelet()
+        blip = wavelet.CreateBlip()
+        blip.GetDocument.SetText("Thanks for adding me!")
+
+    robot = robots.Robot()
+    robot.RegisterListener(MyRobotListener)
+    robot.Run()
+
+  TODO(davidbyttow): Implement this functionality.
+  """
+
+  def __init__(self):
+    pass
+
+  def OnRobotAdded(self):
+    # TODO(davidbyttow): Implement.
+    pass
+
+  def OnRobotRemoved(self):
+    # TODO(davidbyttow): Implement.
+    pass
 
 
 class Robot(object):
@@ -114,7 +152,7 @@ class Robot(object):
     """Registers a cron job to surface in capabilities.xml."""
     self.cron_jobs.append((path, seconds))
 
-  def _HandleEvent(self, event, context):
+  def HandleEvent(self, event, context):
     """Calls all of the handlers associated with an event."""
     for handler in self._handlers.get(event.type, []):
       handler(event.properties, context)
