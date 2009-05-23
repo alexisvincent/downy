@@ -1,13 +1,20 @@
 #!/usr/bin/python2.5
 
 import logging
-from mercurial import hgweb
+import mercurial
 import webob
 import webob.exc
 
 from api import robot_abstract
 from api import events
 import downy
+
+
+def NonInteractiveUI():
+  ui = mercurial.ui.ui()
+  ui.setconfig('ui', 'interactive', 'off')
+  return ui
+
 
 class RobotMiddleware(object):
   """WSGI middleware that routes /_wave/ requests to a robot wsgi app."""
@@ -17,7 +24,6 @@ class RobotMiddleware(object):
 
   def __call__(self, environ, start_response):
     path = environ['PATH_INFO']
-    print path
     if path.startswith('/_wave/'):
       return self._robot_app(environ, start_response)
     return self._main_app(environ, start_response)
@@ -38,13 +44,14 @@ class SimpleRobotApp(object):
     json_body = req.body
     if not json_body:
       return
+    logging.info('Incoming: %s', json_body)
 
-    context, events = robot_abstract.ParseJSONBody(json_body)
-    for event in events:
+    context = robot_abstract.ParseJSONBody(json_body)
+    for event in context.GetEvents():
       self._robot.HandleEvent(event, context)
 
     json_response = robot_abstract.SerializeContext(context)
-    logging.info('Outgoing: ' + json_response)
+    logging.info('Outgoing: %s', json_response)
     return webob.Response(content_type='application/json',
                           body=json_response)
 
@@ -59,8 +66,11 @@ class SimpleRobotApp(object):
     return response(environ, start_response)
 
 
-def downy_app(repo):
-  model = downy.Downy()
+def downy_app(repo_path):
+  hgui = NonInteractiveUI()
+  repo = mercurial.hg.repository(hgui, path=repo_path)
+
+  model = downy.Downy(repo)
   bot = robot_abstract.Robot(
       'Downy',
       image_url='http://downybot.appspot.com/public/downy.png',
@@ -71,16 +81,18 @@ def downy_app(repo):
                       model.on_participants_changed)
 
   robot_app = SimpleRobotApp(bot)
-  hg_app = hgweb.hgweb(repo)
-
+  hg_app = mercurial.hgweb.hgweb(repo)
   return RobotMiddleware(robot_app, hg_app)
 
 
 if __name__=='__main__':
   from wsgiref import simple_server, validate
 
+  logging.basicConfig(level=logging.INFO)
+
   port = 8000
   repo = '.'
   app = validate.validator(downy_app(repo))
   httpd = simple_server.make_server('', port, app)
+  logging.info('Serving on port %d', port)
   httpd.serve_forever()
