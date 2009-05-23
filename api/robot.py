@@ -13,12 +13,15 @@ __author__ = 'davidbyttow@google.com (David Byttow)'
 
 
 import logging
-from django.utils import simplejson
+import sys
+import traceback
 
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
+
 import ops
 import util
+import robot_abstract
 
 
 DEBUG_DATA = None
@@ -32,32 +35,9 @@ class RobotCapabilitiesHandler(webapp.RequestHandler):
     """Initializes this handler with a specific robot."""
     self._robot = robot
 
-  def _CapabilitiesXml(self):
-    lines = ['<w:capabilities>']
-    for capability in self._robot.GetCapabilities():
-      lines.append('  <w:capability name="%s"/>' % capability)
-    lines.append('</w:capabilities>')
-
-    if self._robot.cron_jobs:
-      lines.append('<w:crons>')
-      for job in self._robot.cron_jobs:
-        lines.append('  <w:cron path="%s" timerinseconds="%s"/>' % job)
-      lines.append('</w:crons>')
-
-    robot = self._robot
-    robot_attrs = ' name="%s"' % robot.name
-    if robot.image_url:
-      robot_attrs += ' imageurl="%s"' % robot.image_url
-    if robot.image_url:
-      robot_attrs += ' profileurl="%s"' % robot.profile_url
-    lines.append('<w:profile%s/>' % robot_attrs)
-    return ('<?xml version="1.0"?>\n'
-            '<w:robot xmlns:w="http://www.google.com/fake/ns/whee">\n'
-            '%s\n</w:robot>\n') % ('\n'.join(lines))
-
   def get(self):
     """Handles HTTP GET request."""
-    xml = self._CapabilitiesXml()
+    xml = robot_abstract.CapabilitiesXml(self._robot)
     self.response.headers['Content-Type'] = 'text/xml'
     self.response.out.write(xml)
 
@@ -89,32 +69,18 @@ class RobotEventHandler(webapp.RequestHandler):
       # TODO(davidbyttow): Log error?
       return
 
-    json = simplejson.loads(json_body)
-    logging.info('Incoming: ' + str(json))
+    context, events = robot_abstract.ParseJSONBody(json_body)
+    for event in events:
+      try:
+        self._robot._HandleEvent(event, context)
+      except Exception:
+        logging.error(traceback.format_exc())
 
-    # TODO(davidbyttow): Remove this once no longer needed.
-    data = util.CollapseJavaCollections(json)
-    context = ops.CreateContext(data)
-
-    event_list = data['events']
-    # For each event, construct an event object and allow the robot to
-    # handle it.
-    for event_data in event_list:
-      event_type = event_data['type']
-      properties = event_data['properties'] or {}
-      if event_type:
-        self._DispatchEvent(event_type, properties, context)
-
+    json_response = robot_abstract.SerializeContext(context)
     # Build the response.
-    response = util.Serialize(context)
-    self.response.headers['Content-Type'] = 'application/json'
-    json_response = simplejson.dumps(response)
     logging.info('Outgoing: ' + json_response)
+    self.response.headers['Content-Type'] = 'application/json'
     self.response.out.write(json_response)
-
-  def _DispatchEvent(self, event_type, properties, context):
-    """Dispatches this event to the robot."""
-    self._robot._HandleEvent(event_type, properties, context)
 
 
 def RobotHandlerFactory(cls, robot):
@@ -226,10 +192,10 @@ class Robot(object):
     """Registers a cron job to surface in capabilities.xml."""
     self.cron_jobs.append((path, seconds))
 
-  def _HandleEvent(self, event_type, event_properties, context):
+  def _HandleEvent(self, event, context):
     """Calls all of the handlers associated with an event."""
-    for handler in self.__handlers.get(event_type, []):
-      handler(event_properties, context)
+    for handler in self.__handlers.get(event.type, []):
+      handler(event.properties, context)
 
   def GetCapabilities(self):
     """Returns a list of the event types that we are interested in."""

@@ -131,7 +131,7 @@ class OpBasedWavelet(model.Wavelet):
     """
     self.__context.builder.WaveletAddParticipant(self.GetWaveId(), self.GetId(),
                                                  participant_id)
-    self._data.participants.append(participant_id)
+    self._data.participants.add(participant_id)
 
   def RemoveSelf(self):
     """Removes this robot from the wavelet."""
