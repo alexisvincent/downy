@@ -34,8 +34,8 @@ class SimpleRobotApp(object):
     response.cache_control = 'Private'  # XXX
     return response
 
-  def jsonrpc(self):
-    json_body = self.request.body
+  def jsonrpc(self, req):
+    json_body = req.body
     if not json_body:
       return
 
@@ -43,10 +43,10 @@ class SimpleRobotApp(object):
     for event in events:
       self._robot.HandleEvent(event, context)
 
-    json_response = robot_abstract.SerializeContext(response)
+    json_response = robot_abstract.SerializeContext(context)
     logging.info('Outgoing: ' + json_response)
-    return Response(content_type='application/json',
-                    body=json_response)
+    return webob.Response(content_type='application/json',
+                          body=json_response)
 
   def __call__(self, environ, start_response):
     req = webob.Request(environ)
