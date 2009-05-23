@@ -1,12 +1,13 @@
 #!/usr/bin/python2.5
 
 import logging
-import mercurial
+from mercurial import hgweb
 import webob
+import webob.exc
 
 from api import robot_abstract
 from api import events
-
+import downy
 
 class RobotMiddleware(object):
   """WSGI middleware that routes /_wave/ requests to a robot wsgi app."""
@@ -15,15 +16,25 @@ class RobotMiddleware(object):
     self._main_app = main_app
 
   def __call__(self, environ, start_response):
-    path = env['PATH_INFO']
-    if path.startswith('_wave/'):
+    path = environ['PATH_INFO']
+    print path
+    if path.startswith('/_wave/'):
       return self._robot_app(environ, start_response)
     return self._main_app(environ, start_response)
 
 
-class EventHandler(object):
+class SimpleRobotApp(object):
 
-  def handle_request(self):
+  def __init__(self, robot):
+    self._robot = robot
+
+  def capabilities(self):
+    xml = robot_abstract.CapabilitiesXml(self._robot)
+    response = webob.Response(content_type='text/xml', body=xml)
+    response.cache_control = 'Private'  # XXX
+    return response
+
+  def jsonrpc(self):
     json_body = self.request.body
     if not json_body:
       return
@@ -37,50 +48,39 @@ class EventHandler(object):
     return Response(content_type='application/json',
                     body=json_response)
 
-
-class SimpleRobotApp(object):
-
-  def __init__(self, robot):
-    self._robot = robot
-    self._event_handler = EventHandler(robot)
-
-  def capabilities(self):
-    xml = robot_abstract.CapabilitiesXml(self._robot)
-    response = webob.Response(content_type='text/xml', body=xml)
-    response.cache_control = 'Private'  # XXX
-    return response
-
   def __call__(self, environ, start_response):
     req = webob.Request(environ)
     if req.path_info == '/_wave/capabilities.xml' and req.method == 'GET':
-      return self.capabilities(req)
+      response = self.capabilities()
     elif req.path_info == '/_wave/robot/jsonrpc' and req.method == 'POST':
-      return self._event_handler.post(req)
+      response = self.jsonrpc(req)
     else:
-      return webob.exc.HTTPNotFound()
+      response = webob.exc.HTTPNotFound()
+    return response(environ, start_response)
 
 
-def downy_app():
-  downy = Downy()
+def downy_app(repo):
+  model = downy.Downy()
   bot = robot_abstract.Robot(
       'Downy',
       image_url='http://downybot.appspot.com/public/downy.png',
       profile_url='http://downybot.appspot.com/public/profile.xml')
   bot.RegisterHandler(events.WAVELET_BLIP_CREATED,
-                      downy.on_blip_created)
+                      model.on_blip_created)
   bot.RegisterHandler(events.WAVELET_PARTICIPANTS_CHANGED,
-                      downy.on_participants_changed)
+                      model.on_participants_changed)
 
   robot_app = SimpleRobotApp(bot)
-  hg_app = mecurial.HgWeb()
+  hg_app = hgweb.hgweb(repo)
 
-  app = RobotMiddleware(robot_app, hg_app)
+  return RobotMiddleware(robot_app, hg_app)
 
 
 if __name__=='__main__':
   from wsgiref import simple_server, validate
 
   port = 8000
-  app = validate.validator(downy_app())
+  repo = '.'
+  app = validate.validator(downy_app(repo))
   httpd = simple_server.make_server('', port, app)
   httpd.serve_forever()
