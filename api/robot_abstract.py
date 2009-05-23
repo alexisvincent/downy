@@ -2,59 +2,29 @@
 #
 # Copyright 2009 Google Inc. All Rights Reserved.
 
-"""Defines the robot class and handlers associated.
+"""Defines the generic robot classes.
 
-This is currently App Engine specific with respect to web handlers.
-
-TODO(davidbyttow): Split App Engine specific code into separate module.
+This module provides the Robot class and RobotListener interface,
+as well as some helper functions for web requests and responses.
 """
 
 __author__ = 'davidbyttow@google.com (David Byttow)'
 
-
-import logging
 import simplejson
 
-import events
+import model
 import ops
 import util
-
-
-def CapabilitiesXml(robot):
-  lines = ['<w:capabilities>']
-  for capability in robot.GetCapabilities():
-    lines.append('  <w:capability name="%s"/>' % capability)
-  lines.append('</w:capabilities>')
-
-  if robot.cron_jobs:
-    lines.append('<w:crons>')
-    for job in robot.cron_jobs:
-      lines.append('  <w:cron path="%s" timerinseconds="%s"/>' % job)
-    lines.append('</w:crons>')
-
-  robot_attrs = ' name="%s"' % robot.name
-  if robot.image_url:
-    robot_attrs += ' imageurl="%s"' % robot.image_url
-  if robot.image_url:
-    robot_attrs += ' profileurl="%s"' % robot.profile_url
-  lines.append('<w:profile%s/>' % robot_attrs)
-  return ('<?xml version="1.0"?>\n'
-          '<w:robot xmlns:w="http://www.google.com/fake/ns/whee">\n'
-          '%s\n</w:robot>\n') % ('\n'.join(lines))
 
 
 def ParseJSONBody(json_body):
   """Parse a JSON string and return a context and an event list."""
   json = simplejson.loads(json_body)
-  logging.info('Incoming: ' + str(json))
 
   # TODO(davidbyttow): Remove this once no longer needed.
   data = util.CollapseJavaCollections(json)
 
-  context = ops.CreateContext(data)
-  event_list = [events.Event(event_data) for event_data in data['events']]
-  event_list = filter(lambda event: event.type, event_list)
-  return context, event_list
+  return ops.CreateContext(data)
 
 
 def SerializeContext(context):
@@ -105,19 +75,11 @@ class RobotListener(object):
 
 
 class Robot(object):
-  """Robot class used to setup this application.
+  """Robot metadata class.
 
-  A robot is typically setup in the following steps:
-    1. Instantiate and define robot.
-    2. Register various handlers that it is interested in.
-    3. Call Run, which will setup the handlers for the app.
-
-  For example:
-    robot = Robot('Terminator',
-                  image_url='http://www.sky.net/models/t800.png',
-                  profile_url='http://www.sky.net/models/t800.html')
-    robot.RegisterHandler(WAVELET_PARTICIPANTS_CHANGED, KillParticipant)
-    robot.Run()
+  This class holds on to basic robot information like the name and profile.
+  It also maintains the list of event handlers and cron jobs and
+  dispatches events to the appropriate handlers.
   """
 
   def __init__(self, name, image_url=None, profile_url=None):
@@ -147,7 +109,6 @@ class Robot(object):
     """
     self._handlers.setdefault(event_type, []).append(handler)
 
-
   def RegisterCronJob(self, path, seconds):
     """Registers a cron job to surface in capabilities.xml."""
     self.cron_jobs.append((path, seconds))
@@ -155,8 +116,33 @@ class Robot(object):
   def HandleEvent(self, event, context):
     """Calls all of the handlers associated with an event."""
     for handler in self._handlers.get(event.type, []):
-      handler(event.properties, context)
+      # TODO(jacobly): pass the event in to the handlers directly
+      # instead of passing the properties dictionary.
+      handler(event.GetProperties(), context)
 
   def GetCapabilities(self):
     """Returns a list of the event types that we are interested in."""
     return self._handlers.keys()
+
+  def CapabilitiesXml(self):
+    """Return this robot's capabilities as an XML string."""
+    lines = ['<w:capabilities>']
+    for capability in self.GetCapabilities():
+      lines.append('  <w:capability name="%s"/>' % capability)
+    lines.append('</w:capabilities>')
+
+    if self.cron_jobs:
+      lines.append('<w:crons>')
+      for job in self.cron_jobs:
+        lines.append('  <w:cron path="%s" timerinseconds="%s"/>' % job)
+      lines.append('</w:crons>')
+
+    robot_attrs = ' name="%s"' % self.name
+    if self.image_url:
+      robot_attrs += ' imageurl="%s"' % self.image_url
+    if self.profile_url:
+      robot_attrs += ' profileurl="%s"' % self.profile_url
+    lines.append('<w:profile%s/>' % robot_attrs)
+    return ('<?xml version="1.0"?>\n'
+            '<w:robot xmlns:w="http://www.google.com/fake/ns/whee">\n'
+            '%s\n</w:robot>\n') % ('\n'.join(lines))

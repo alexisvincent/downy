@@ -48,7 +48,7 @@ class TestOpBasedClasses(unittest.TestCase):
 
     wave_data = model.WaveData()
     wave_data.id = 'my-wave'
-    wave_data.wavelet_ids = ['wavelet-1']
+    wave_data.wavelet_ids = set(['wavelet-1'])
     self.test_wave_data = wave_data
     self.test_wave = self.test_context.AddWave(wave_data)
 
@@ -56,7 +56,7 @@ class TestOpBasedClasses(unittest.TestCase):
     wavelet_data.creator = 'creator@google.com'
     wavelet_data.creation_time = 100
     wavelet_data.last_modified_time = 101
-    wavelet_data.participants = ['robot@google.com']
+    wavelet_data.participants = set(['robot@google.com'])
     wavelet_data.root_blip_id = 'blip-1'
     wavelet_data.wave_id = wave_data.id
     wavelet_data.wavelet_id = 'wavelet-1'
@@ -66,7 +66,7 @@ class TestOpBasedClasses(unittest.TestCase):
     blip_data = model.BlipData()
     blip_data.blip_id = wavelet_data.root_blip_id
     blip_data.content = '<p>testing</p>'
-    blip_data.contributors = [wavelet_data.creator, 'robot@google.com']
+    blip_data.contributors = set([wavelet_data.creator, 'robot@google.com'])
     blip_data.creator = wavelet_data.creator
     blip_data.last_modified_time = wavelet_data.last_modified_time
     blip_data.parent_blip_id = None
@@ -117,7 +117,7 @@ class TestOpBasedWavelet(TestOpBasedClasses):
   def testAddParticipant(self):
     p = 'newguy@google.com'
     self.test_wavelet.AddParticipant(p)
-    self.assertTrue(self.test_wavelet.GetParticipants().index(p) != -1)
+    self.assertTrue(p in self.test_wavelet.GetParticipants())
 
   def testRemoveSelf(self):
     self.assertRaises(NotImplementedError,

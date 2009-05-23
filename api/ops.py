@@ -496,6 +496,15 @@ class _ContextImpl(model.Context):
     self._blips[blip.GetId()] = blip
     return blip
 
+  def AddEvent(self, event_data):
+    """Adds an event based on the data supplied.
+
+    Args:
+      event_data: An instance of EventData describing a single event.
+    """
+    event = model.Event(event_data)
+    self._events.append(event)
+
   def RemoveWave(self, wave_id):
     """Removes a wave locally."""
     if wave_id in self._waves:
@@ -512,7 +521,7 @@ class _ContextImpl(model.Context):
       del self._blips[blip_id]
 
   def Serialize(self):
-    """Serialize the operation bundle.
+    """Serialize the operation bundle accumulated in this context.
 
     Returns:
       Dict representing this object.
@@ -558,6 +567,10 @@ def CreateContext(data):
     wave_data.wave_id = wave_id
     wave_data.wavelet_ids = set(wavelet_ids)
     context.AddWave(wave_data)
+
+  for raw_event_data in data['events']:
+    event_data = model.CreateEventData(raw_event_data)
+    context.AddEvent(event_data)
 
   return context
 

@@ -29,7 +29,7 @@ class SimpleRobotApp(object):
     self._robot = robot
 
   def capabilities(self):
-    xml = robot_abstract.CapabilitiesXml(self._robot)
+    xml = self._robot.CapabilitiesXml()
     response = webob.Response(content_type='text/xml', body=xml)
     response.cache_control = 'Private'  # XXX
     return response

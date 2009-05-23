@@ -2,13 +2,12 @@
 #
 # Copyright 2009 Google Inc. All Rights Reserved.
 
-"""Defines the App Engine-specific robot class and handlers associated."""
+"""Defines the App Engine-specific robot class and associated handlers."""
 
 __author__ = 'davidbyttow@google.com (David Byttow)'
 
 
 import logging
-import sys
 import traceback
 
 from google.appengine.ext import webapp
@@ -30,7 +29,7 @@ class RobotCapabilitiesHandler(webapp.RequestHandler):
 
   def get(self):
     """Handles HTTP GET request."""
-    xml = robot_abstract.CapabilitiesXml(self._robot)
+    xml = self._robot.CapabilitiesXml()
     self.response.headers['Content-Type'] = 'text/xml'
     self.response.out.write(xml)
 
@@ -61,12 +60,13 @@ class RobotEventHandler(webapp.RequestHandler):
     if not json_body:
       # TODO(davidbyttow): Log error?
       return
+    logging.info('Incoming: ' + json_body)
 
-    context, events = robot_abstract.ParseJSONBody(json_body)
-    for event in events:
+    context = robot_abstract.ParseJSONBody(json_body)
+    for event in context.GetEvents():
       try:
-        self._robot._HandleEvent(event, context)
-      except Exception:
+        self._robot.HandleEvent(event, context)
+      except:
         logging.error(traceback.format_exc())
 
     json_response = robot_abstract.SerializeContext(context)
@@ -77,7 +77,7 @@ class RobotEventHandler(webapp.RequestHandler):
 
 
 class Robot(robot_abstract.Robot):
-  """Robot class used to setup this application.
+  """Adds an AppEngine setup method to the base robot class.
 
   A robot is typically setup in the following steps:
     1. Instantiate and define robot.

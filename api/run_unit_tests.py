@@ -9,7 +9,7 @@ import document_test
 import model_test
 import module_test_runner
 import ops_test
-import robot_test
+import robot_abstract_test
 import util_test
 
 
@@ -20,7 +20,7 @@ def RunUnitTests():
       document_test,
       model_test,
       ops_test,
-      robot_test,
+      robot_abstract_test,
       util_test,
   ]
   test_runner.RunAllTests()

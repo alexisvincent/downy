@@ -24,9 +24,3 @@ BLIP_SUBMITTED = 'BLIP_SUBMITTED'
 BLIP_TIMESTAMP_CHANGED = 'BLIP_TIMESTAMP_CHANGED'
 BLIP_VERSION_CHANGED = 'BLIP_VERSION_CHANGED'
 DOCUMENT_CHANGED = 'DOCUMENT_CHANGED'
-
-
-class Event(object):
-  def __init__(self, event_data):
-    self.type = event_data['type']
-    self.properties = event_data['properties'] or {}
