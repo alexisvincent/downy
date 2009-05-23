@@ -2,12 +2,7 @@
 #
 # Copyright 2009 Google Inc. All Rights Reserved.
 
-"""Defines the robot class and handlers associated.
-
-This is currently App Engine specific with respect to web handlers.
-
-TODO(davidbyttow): Split App Engine specific code into separate module.
-"""
+"""Defines the App Engine-specific robot class and handlers associated."""
 
 __author__ = 'davidbyttow@google.com (David Byttow)'
 
@@ -81,26 +76,6 @@ class RobotEventHandler(webapp.RequestHandler):
     self.response.out.write(json_response)
 
 
-def RobotHandlerFactory(cls, robot):
-  """Creates a handler class that need a robot when instantiated.
-
-  This exists because the webapp framework allows mapping of url patterns to
-  classes, which it constructs with no arguments. This allows specification
-  of a robot with the request handler that is constructed.
-
-  Args:
-    cls: The webapp handler class.
-    robot: The robot to use with the handler when constructed.
-
-  Returns:
-    Method to construct the desired class with the specific robot.
-  """
-
-  def CreateRobotHandler():
-    return cls(robot)
-  return CreateRobotHandler
-
-
 class Robot(robot_abstract.Robot):
   """Robot class used to setup this application.
 
@@ -124,10 +99,11 @@ class Robot(robot_abstract.Robot):
       debug: Optional variable that defaults to False and is passed through
           to the webapp application to determine if it should show debug info.
     """
+    # App Engine expects to construct a class with no arguments, so we
+    # pass a lambda that constructs the appropriate handler with
+    # arguments from the enclosing scope.
     app = webapp.WSGIApplication([
-        ('/_wave/capabilities.xml',
-         RobotHandlerFactory(RobotCapabilitiesHandler, self)),
-        ('/_wave/robot/jsonrpc',
-         RobotHandlerFactory(RobotEventHandler, self)),
+        ('/_wave/capabilities.xml', lambda: RobotCapabilitiesHandler(self)),
+        ('/_wave/robot/jsonrpc', lambda: RobotEventHandler(self)),
     ], debug=debug)
     run_wsgi_app(app)
