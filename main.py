@@ -46,8 +46,8 @@ class SimpleRobotApp(object):
       return
     logging.info('Incoming: %s', json_body)
 
-    context = robot_abstract.ParseJSONBody(json_body)
-    for event in context.GetEvents():
+    context, events = robot_abstract.ParseJSONBody(json_body)
+    for event in events:
       self._robot.HandleEvent(event, context)
 
     json_response = robot_abstract.SerializeContext(context)
