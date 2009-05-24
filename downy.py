@@ -32,6 +32,20 @@ class Downy(object):
         'Hello! I\'m Downy. You can give me instructions '
         'by replying to this blip.')
       doc.AnnotateDocument('downy-comm', '1')
+      doc.AppendText('I know about the following files:')
+      self.status(doc)
+
+  def status(self, doc):
+    modified, added, removed, deleted, unknown, ignored, clean = repo.status()
+    for file_name in clean:
+      doc.AppendElement(FormElement(
+          document.ElementType.CHECK, name=file_name))
+      doc.AppendText(file_name)
+      doc.AppendElement(FormElement(
+          document.ElementType.BUTTON, name=file_name, label='Load'))
+    doc.AppendElement(FormElement(
+        document.ElementType.BUTTON, name='_loadselected',
+        label='Load Selected'))
 
   def _in_participant_list(self, names):
     return any([name.startswith('Downy') for name in names])
