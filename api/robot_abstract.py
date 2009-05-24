@@ -20,11 +20,11 @@ import util
 def ParseJSONBody(json_body):
   """Parse a JSON string and return a context and an event list."""
   json = simplejson.loads(json_body)
-
   # TODO(davidbyttow): Remove this once no longer needed.
   data = util.CollapseJavaCollections(json)
-
-  return ops.CreateContext(data)
+  context = ops.CreateContext(data)
+  events = [model.CreateEvent(event_data) for event_data in data['events']]
+  return context, events
 
 
 def SerializeContext(context):
@@ -115,17 +115,15 @@ class Robot(object):
 
   def HandleEvent(self, event, context):
     """Calls all of the handlers associated with an event."""
-    for handler in self._handlers.get(event.GetType(), []):
-      handler(event, context)
+    for handler in self._handlers.get(event.type, []):
+      # TODO(jacobly): pass the event in to the handlers directly
+      # instead of passing the properties dictionary.
+      handler(event.properties, context)
 
-  def GetCapabilities(self):
-    """Returns a list of the event types that we are interested in."""
-    return self._handlers.keys()
-
-  def CapabilitiesXml(self):
+  def GetCapabilitiesXml(self):
     """Return this robot's capabilities as an XML string."""
     lines = ['<w:capabilities>']
-    for capability in self.GetCapabilities():
+    for capability in self._handlers:
       lines.append('  <w:capability name="%s"/>' % capability)
     lines.append('</w:capabilities>')
 

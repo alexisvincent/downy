@@ -43,13 +43,6 @@ class TestWaveModel(unittest.TestCase):
     blip_data.wavelet_id = wavelet_data.wavelet_id
     self.test_blip_data = blip_data
 
-    event_data = model.EventData()
-    event_data.type = 'WAVELET_PARTICIPANTS_CHANGED'
-    event_data.properties = {'blipId': 'blip-1'}
-    event_data.timestamp = 123
-    event_data.modified_by = 'modifier@google.com'
-    self.event_data = event_data
-
   def testWaveFields(self):
     w = model.Wave(self.test_wave_data)
     self.assertEquals(self.test_wave_data.id, w.GetId())
@@ -83,19 +76,12 @@ class TestWaveModel(unittest.TestCase):
     b = model.Blip(self.test_blip_data, model.Document(self.test_blip_data))
     self.assertEquals(False, b.IsRoot())
 
-  def testEventFields(self):
-    e = model.Event(self.event_data)
-    self.assertEquals(e.GetType(), self.event_data.type)
-    self.assertEquals(e.GetProperties(), self.event_data.properties)
-    self.assertEquals(e.GetTimestamp(), self.event_data.timestamp)
-    self.assertEquals(e.GetModifiedBy(), self.event_data.modified_by)
-
-  def testCreateEventData(self):
+  def testCreateEvent(self):
     data = {'type': 'WAVELET_PARTICIPANTS_CHANGED',
             'properties': {'blipId': 'blip-1'},
             'timestamp': 123,
             'modifiedBy': 'modifier@google.com'}
-    event_data = model.CreateEventData(data)
+    event_data = model.CreateEvent(data)
     self.assertEquals(data['type'], event_data.type)
     self.assertEquals(data['properties'], event_data.properties)
     self.assertEquals(data['timestamp'], event_data.timestamp)

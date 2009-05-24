@@ -220,7 +220,7 @@ class Document(object):
     return self._blip_data.content
 
 
-class EventData(object):
+class Event(object):
   """Data describing a single event."""
 
   def __init__(self):
@@ -230,33 +230,14 @@ class EventData(object):
     self.properties = {}
 
 
-class Event(object):
-  """An event captures changes made to a Wavelet, Blip, or Document."""
-
-  def __init__(self, data):
-    self._data = data
-
-  def GetType(self):
-    """Returns the type of event this instance represents."""
-    return self._data.type
-
-  def GetTimestamp(self):
-    """Returns the timestamp when this event was triggered.
-
-    Returns:
-      The timestamp of the event, in milliseconds since the UNIX epoch.
-    """
-    return self._data.timestamp
-
-  def GetModifiedBy(self):
-    """Returns the actor/contributor responsible for triggering this event."""
-    return self._data.modified_by
-
-  # TODO(jacobly): replace this method with accessors
-  # that reference the properties dictionary.
-  def GetProperties(self):
-    """Returns the properties on this event."""
-    return self._data.properties
+def CreateEvent(data):
+  """Construct event data from the raw incoming wire protocol."""
+  event = Event()
+  event.type = data['type']
+  event.timestamp = data['timestamp']
+  event.modified_by = data['modifiedBy']
+  event.properties = data['properties'] or {}
+  return event
 
 
 def CreateWaveletData(data):
@@ -317,23 +298,11 @@ def CreateBlipData(data):
   return blip_data
 
 
-def CreateEventData(data):
-  """Construct event data from the raw incoming wire protocol."""
-  event_data = EventData()
-  event_data.type = data['type']
-  event_data.timestamp = data['timestamp']
-  event_data.modified_by = data['modifiedBy']
-  props = data['properties']
-  event_data.properties = props or {}
-  return event_data
-
-
 class Context(object):
   """Contains information associated with a single request from the server.
 
-  This includes the current waves in this session, the events sent with
-  this request, and any operations that have been enqueued during
-  request processing.
+  This includes the current waves in this session
+  and any operations that have been enqueued during request processing.
   """
 
   def __init__(self):
@@ -341,7 +310,6 @@ class Context(object):
     self._wavelets = {}
     self._blips = {}
     self._operations = []
-    self._events = []
 
   def GetBlipById(self, blip_id):
     """Returns a blip by id or None if it does not exist."""
@@ -370,7 +338,3 @@ class Context(object):
   def GetBlips(self):
     """Returns the list of blips associated with this session."""
     return self._blips.values()
-
-  def GetEvents(self):
-    """Returns the list of events associated with this request."""
-    return self._events

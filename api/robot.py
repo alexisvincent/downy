@@ -16,10 +16,6 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 import robot_abstract
 
 
-DEBUG_DATA = None
-#DEBUG_DATA = '{"blips":{"map":{"wdykLROk*13":{"lastModifiedTime":1242079608457,"contributors":{"javaClass":"java.util.ArrayList","list":["davidbyttow@google.com"]},"waveletId":"conv+root","waveId":"wdykLROk*11","parentBlipId":null,"version":3,"creator":"davidbyttow@google.com","content":"\n","blipId":"wdykLROk*13","javaClass":"com.google.walkabout.api.impl.BlipData","annotations":{"javaClass":"java.util.ArrayList","list":[{"range":{"start":0,"javaClass":"com.google.walkabout.api.Range","end":1},"name":"user/e/davidbyttow@google.com","value":"David","javaClass":"com.google.walkabout.api.Annotation"}]},"elements":{"map":{},"javaClass":"java.util.HashMap"},"childBlipIds":{"javaClass":"java.util.ArrayList","list":[]}}},"javaClass":"java.util.HashMap"},"events":{"javaClass":"java.util.ArrayList","list":[{"timestamp":1242079611003,"modifiedBy":"davidbyttow@google.com","javaClass":"com.google.walkabout.api.impl.EventData","properties":{"map":{"participantsRemoved":{"javaClass":"java.util.ArrayList","list":[]},"participantsAdded":{"javaClass":"java.util.ArrayList","list":["monty@appspot.com"]}},"javaClass":"java.util.HashMap"},"type":"WAVELET_PARTICIPANTS_CHANGED"}]},"wavelet":{"lastModifiedTime":1242079611003,"title":"","waveletId":"conv+root","rootBlipId":"wdykLROk*13","javaClass":"com.google.walkabout.api.impl.WaveletData","dataDocuments":null,"creationTime":1242079608457,"waveId":"wdykLROk*11","participants":{"javaClass":"java.util.ArrayList","list":["davidbyttow@google.com","monty@appspot.com"]},"creator":"davidbyttow@google.com","version":5}}'
-
-
 class RobotCapabilitiesHandler(webapp.RequestHandler):
   """Handler for serving capabilities.xml given a robot."""
 
@@ -29,7 +25,7 @@ class RobotCapabilitiesHandler(webapp.RequestHandler):
 
   def get(self):
     """Handles HTTP GET request."""
-    xml = self._robot.CapabilitiesXml()
+    xml = self._robot.GetCapabilitiesXml()
     self.response.headers['Content-Type'] = 'text/xml'
     self.response.out.write(xml)
 
@@ -47,13 +43,6 @@ class RobotEventHandler(webapp.RequestHandler):
     """Initializes self with a specific robot."""
     self._robot = robot
 
-  def get(self):
-    """Handles HTTP GET requests."""
-    if DEBUG_DATA:
-      self.request.body = DEBUG_DATA
-      self.post()
-      self.response.headers['Content-Type'] = 'text/html'
-
   def post(self):
     """Handles HTTP POST requests."""
     json_body = self.request.body
@@ -62,8 +51,8 @@ class RobotEventHandler(webapp.RequestHandler):
       return
     logging.info('Incoming: ' + json_body)
 
-    context = robot_abstract.ParseJSONBody(json_body)
-    for event in context.GetEvents():
+    context, events = robot_abstract.ParseJSONBody(json_body)
+    for event in events:
       try:
         self._robot.HandleEvent(event, context)
       except:

@@ -14,9 +14,10 @@ DEBUG_DATA = r'{"blips":{"map":{"wdykLROk*13":{"lastModifiedTime":1242079608457,
 
 
 class TestHelpers(unittest.TestCase):
+  """Tests for the web helper functions in abstract_robot."""
 
   def testParseJSONBody(self):
-    context = robot_abstract.ParseJSONBody(DEBUG_DATA)
+    context, events = robot_abstract.ParseJSONBody(DEBUG_DATA)
 
     # Test some basic properties; the rest should be covered by
     # ops.CreateContext.
@@ -26,16 +27,15 @@ class TestHelpers(unittest.TestCase):
     self.assertEqual('wdykLROk*11', blips[0].GetWaveId())
     self.assertEqual('conv+root', blips[0].GetWaveletId())
 
-    event_list = context.GetEvents()
-    self.assertEqual(1, len(event_list))
-    event = event_list[0]
-    self.assertEqual('WAVELET_PARTICIPANTS_CHANGED', event.GetType())
+    self.assertEqual(1, len(events))
+    event = events[0]
+    self.assertEqual('WAVELET_PARTICIPANTS_CHANGED', event.type)
     self.assertEqual({'participantsRemoved': [],
                       'participantsAdded': ['monty@appspot.com']},
-                     event.GetProperties())
+                     event.properties)
 
   def testSerializeContextSansOps(self):
-    context = robot_abstract.ParseJSONBody(DEBUG_DATA)
+    context, _ = robot_abstract.ParseJSONBody(DEBUG_DATA)
     serialized = robot_abstract.SerializeContext(context)
     self.assertEqual(
         '{"operations": {"javaClass": "java.util.ArrayList", "list": []}, '
@@ -43,10 +43,10 @@ class TestHelpers(unittest.TestCase):
         serialized)
 
   def testSerializeContextWithOps(self):
-    context = robot_abstract.ParseJSONBody(DEBUG_DATA)
+    context, _ = robot_abstract.ParseJSONBody(DEBUG_DATA)
     wavelet = context.GetWavelets()[0]
     blip = context.GetBlipById(wavelet.GetRootBlipId())
-    blip.GetDocument().SetText("Hello, wave!")
+    blip.GetDocument().SetText('Hello, wave!')
     serialized = robot_abstract.SerializeContext(context)
     self.assertEqual(
         '{"operations": {"javaClass": "java.util.ArrayList", "list": ['
@@ -56,7 +56,7 @@ class TestHelpers(unittest.TestCase):
         serialized)
 
 
-class TestCapabilitiesXml(unittest.TestCase):
+class TestGetCapabilitiesXml(unittest.TestCase):
 
   def setUp(self):
     self.robot = robot_abstract.Robot('Testy')
@@ -71,7 +71,7 @@ class TestCapabilitiesXml(unittest.TestCase):
         '<w:capabilities>\n</w:capabilities>\n'
         '<w:profile name="Testy"/>\n'
         '</w:robot>\n')
-    xml = self.robot.CapabilitiesXml()
+    xml = self.robot.GetCapabilitiesXml()
     self.assertStringsEqual(expected, xml)
 
   def testUrls(self):
@@ -86,7 +86,7 @@ class TestCapabilitiesXml(unittest.TestCase):
         ' imageurl="http://example.com/image.png"'
         ' profileurl="http://example.com/profile.xml"/>\n'
         '</w:robot>\n')
-    xml = profile_robot.CapabilitiesXml()
+    xml = profile_robot.GetCapabilitiesXml()
     self.assertStringsEqual(expected, xml)
 
   def testCapsAndEvents(self):
@@ -101,7 +101,7 @@ class TestCapabilitiesXml(unittest.TestCase):
         '<w:crons>\n  <w:cron path="/ping" timerinseconds="20"/>\n</w:crons>\n'
         '<w:profile name="Testy"/>\n'
         '</w:robot>\n')
-    xml = self.robot.CapabilitiesXml()
+    xml = self.robot.GetCapabilitiesXml()
     self.assertStringsEqual(expected, xml)
 
 
