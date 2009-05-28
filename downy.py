@@ -3,13 +3,21 @@
 import logging
 
 from mercurial import commands
-
 from api import document
+
+STATS = document.StringEnum(
+    'modified', 'added', 'removed', 'deleted', 'unknown')
+
+
+class LocalFile(object):
+  def __init__(self, name):
+    self.name = name
 
 
 class Downy(object):
   def __init__(self, repo):
     self.repo = repo
+    self.tracked_files = []
 
   def on_blip_created(self, props, context):
     logging.info('blip created')
@@ -21,24 +29,36 @@ class Downy(object):
     if self._in_participant_list(added):
       self.announce(context)
 
+  def load_file(self, context, file_name):
+    wavelet = context.GetRootWavelet()
+    new_blip = wavelet.CreateBlip()
+    doc = new_blip.GetDocument()
+    doc.AppendElement(FormElement(
+        document.ElementType.BUTTON,
+        name=file_name + '_commit', label='Commit'))
+    file_text = self.repo.wread(file_name)
+    doc.AppendText(file_text)
+
+  def root_blip(self, context):
+    wavelet = context.GetRootWavelet()
+    return context.GetBlipById(wavelet.GetRootBlipId())
+
   def command(self, cmd):
     cmd_fn = getattr(commands)
     cmd_fn(self.repo.ui, self.repo)
 
   def announce(self, context):
-    wavelet = context.GetRootWavelet()
-    blip = context.GetBlipById(wavelet.GetRootBlipId())
-    if blip:
-      inline_blip = blip.GetDocument().AppendInlineBlip()
-      doc = inline_blip.GetDocument()
-      doc.SetText(
-        'Hello! I\'m Downy. You can give me instructions '
-        'by replying to this blip.')
-      doc.AnnotateDocument('downy-comm', '1')
-      doc.AppendText('I know about the following files:')
-      self.status(doc)
-    else:
-      logging.info('No such blip: %s', wavelet.GetRootBlipId())
+    blip = self.root_blip(context)
+    if not blip:
+      logging.info('Um, no root blip?')
+      return
+    inline_blip = blip.GetDocument().AppendInlineBlip()
+    doc.SetText(
+      'Hello! I\'m Downy. You can give me instructions '
+      'by replying to this blip.')
+    doc.AnnotateDocument('downy-comm', '1')
+    doc.AppendText('I know about the following files:')
+    self.status(doc)
 
   def status(self, doc):
     (modified, added, removed, deleted, unknown, ignored,
