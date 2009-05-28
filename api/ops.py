@@ -61,9 +61,9 @@ class Operation(object):
   model classes directly instead.
   """
 
-  java_class = 'com.google.walkabout.api.impl.OperationImpl'
+  java_class = 'com.google.wave.api.impl.OperationImpl'
 
-  def __init__(self, op_type, wave_id, wavelet_id, blip_id=None, index=-1,
+  def __init__(self, op_type, wave_id, wavelet_id, blip_id='', index=-1,
                prop=None):
     """Initializes this operation with contextual data.
 
@@ -518,7 +518,7 @@ class _ContextImpl(model.Context):
       Dict representing this object.
     """
     data = {
-        'javaClass': 'com.google.walkabout.api.impl.OperationMessageBundle',
+        'javaClass': 'com.google.wave.api.impl.OperationMessageBundle',
         'operations': util.Serialize(self._operations)
     }
     return data

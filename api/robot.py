@@ -30,6 +30,19 @@ class RobotCapabilitiesHandler(webapp.RequestHandler):
     self.response.out.write(xml)
 
 
+class RobotProfileHandler(webapp.RequestHandler):
+  """Handler for serving the robot's profile information."""
+
+  def __init__(self, robot):
+    """Initializes this handler with a specific robot."""
+    self._robot = robot
+
+  def get(self):
+    """Handles HTTP GET request."""
+    self.response.headers['Content-Type'] = 'application/json'
+    self.response.out.write(self._robot.GetProfileJson())
+
+
 class RobotEventHandler(webapp.RequestHandler):
   """Handler for the dispatching of events to various handlers to a robot.
 
@@ -42,6 +55,15 @@ class RobotEventHandler(webapp.RequestHandler):
   def __init__(self, robot):
     """Initializes self with a specific robot."""
     self._robot = robot
+
+  def get(self):
+    """Handles the get event for debugging. Ops usually too long."""
+    ops = self.request.get('ops')
+    logging.info('get: ' + ops)
+    if ops:
+      self.request.body = ops
+      self.post()
+      self.response.headers['Content-Type'] = 'text/html'
 
   def post(self):
     """Handles HTTP POST requests."""
@@ -93,6 +115,7 @@ class Robot(robot_abstract.Robot):
     # arguments from the enclosing scope.
     app = webapp.WSGIApplication([
         ('/_wave/capabilities.xml', lambda: RobotCapabilitiesHandler(self)),
+        ('/_wave/robot/profile', lambda: RobotProfileHandler(self)),
         ('/_wave/robot/jsonrpc', lambda: RobotEventHandler(self)),
     ], debug=debug)
     run_wsgi_app(app)

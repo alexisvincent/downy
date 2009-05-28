@@ -20,7 +20,7 @@ class Range(object):
   of zero. If zero, the range is considered to be a single point (collapsed).
   """
 
-  java_class = 'com.google.walkabout.api.Range'
+  java_class = 'com.google.wave.api.Range'
 
   def __init__(self, start=0, end=1):
     """Initializes the range with a start and end position.
@@ -53,7 +53,7 @@ class Annotation(object):
   the data.
   """
 
-  java_class = 'com.google.walkabout.api.Annotation'
+  java_class = 'com.google.wave.api.Annotation'
 
   def __init__(self, name, value, r=None):
     """Initializes this annotation with a name and value pair and a range.
@@ -80,7 +80,7 @@ class StringEnum(object):
 
 
 ELEMENT_TYPE = StringEnum('INLINE_BLIP', 'INPUT', 'CHECK', 'LABEL', 'BUTTON',
-    'RADIO_BUTTON', 'RADIO_BUTTON_GROUP','GADGET', 'IMAGE')
+    'RADIO_BUTTON', 'RADIO_BUTTON_GROUP','PASSWORD', 'GADGET', 'IMAGE')
 
 
 class Element(object):
@@ -95,7 +95,7 @@ class Element(object):
   should not be instantiated by robots, but rather rely on the derrived classes.
   """
 
-  java_class = 'com.google.walkabout.api.Element'
+  java_class = 'com.google.wave.api.Element'
 
   def __init__(self, element_type, **properties):
     """Initializes self with the specified type and any properties."""
@@ -110,7 +110,7 @@ class Element(object):
     properties.
     """
     props = {}
-    data = {'properties': props}
+    data = {}
     for attr in dir(self):
       if attr.startswith('_'):
         continue
@@ -122,12 +122,13 @@ class Element(object):
         data[attr] = val
       else:
         props[attr] = val
+    data['properties'] = util.Serialize(props)
     return data
 
 
 class FormElement(Element):
 
-  java_class = 'com.google.walkabout.api.FormElement'
+  java_class = 'com.google.wave.api.FormElement'
 
   def __init__(self, element_type, name, value='', default_value='', label=''):
     super(FormElement, self).__init__(element_type,
@@ -136,7 +137,7 @@ class FormElement(Element):
 
 class Gadget(Element):
 
-  java_class = 'com.google.walkabout.api.Gadget'
+  java_class = 'com.google.wave.api.Gadget'
 
   def __init__(self, url=''):
     super(Gadget, self).__init__(ELEMENT_TYPE.GADGET, url=url)
@@ -144,7 +145,7 @@ class Gadget(Element):
 
 class Image(Element):
 
-  java_class = 'com.google.walkabout.api.Image'
+  java_class = 'com.google.wave.api.Image'
 
   def __init__(self, url='', width=None, height=None,
       attachment_id=None, caption=None):

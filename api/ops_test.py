@@ -23,7 +23,7 @@ class TestOperation(unittest.TestCase):
     self.assertEquals(ops.WAVELET_APPEND_BLIP, op.type)
     self.assertEquals('wave-id', op.wave_id)
     self.assertEquals('wavelet-id', op.wavelet_id)
-    self.assertEquals(None, op.blip_id)
+    self.assertEquals('', op.blip_id)
     self.assertEquals(-1, op.index)
     self.assertEquals(None, op.property)
 

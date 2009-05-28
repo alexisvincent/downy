@@ -87,7 +87,8 @@ class TestElement(unittest.TestCase):
     k.sort()
     # we should really only have three things to serialize
     self.assertEquals(['java_class', 'properties', 'type'], k)
-    props = s['properties']
+    self.assertEquals(s['properties']['javaClass'], 'java.util.HashMap')
+    props = s['properties']['map']
     self.assertEquals(len(props), 3)
     self.assertEquals(props['url'], 'http://test.com/image.png')
     self.assertEquals(props['width'], 100)

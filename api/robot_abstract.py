@@ -10,10 +10,9 @@ as well as some helper functions for web requests and responses.
 
 __author__ = 'davidbyttow@google.com (David Byttow)'
 
-import simplejson
-
 import model
 import ops
+import simplejson
 import util
 
 
@@ -82,7 +81,7 @@ class Robot(object):
   dispatches events to the appropriate handlers.
   """
 
-  def __init__(self, name, image_url=None, profile_url=None):
+  def __init__(self, name, image_url='', profile_url=''):
     """Initializes self with robot information."""
     self._handlers = {}
     self.name = name
@@ -140,5 +139,19 @@ class Robot(object):
       robot_attrs += ' profileurl="%s"' % self.profile_url
     lines.append('<w:profile%s/>' % robot_attrs)
     return ('<?xml version="1.0"?>\n'
-            '<w:robot xmlns:w="http://www.google.com/fake/ns/whee">\n'
+            '<w:robot xmlns:w="http://wave.google.com/extensions/robots/1.0">\n'
             '%s\n</w:robot>\n') % ('\n'.join(lines))
+
+  def GetProfileJson(self):
+    """Returns JSON body for any profile handler.
+
+    Returns:
+      String of JSON to be sent as a response.
+    """
+    data = {}
+    data['name'] = self.name
+    data['imageUrl'] = self.image_url
+    data['profileUrl'] = self.profile_url
+    # TODO(davidbyttow): Remove this java nonsense.
+    data['javaClass'] = 'com.google.wave.api.ParticipantProfile'
+    return simplejson.dumps(data)

@@ -12,9 +12,10 @@ __author__ = 'davidbyttow@google.com (David Byttow)'
 
 
 import document
+import logging
 
 
-ROOT_WAVELET_ID = 'google.com!conv+root'
+ROOT_WAVELET_ID_SUFFIX = '!conv+root'
 
 
 class WaveData(object):
@@ -52,7 +53,7 @@ class Wave(object):
 class WaveletData(object):
   """Defines the data for a single wavelet."""
 
-  java_class = 'com.google.walkabout.api.impl.WaveletData'
+  java_class = 'com.google.wave.api.impl.WaveletData'
 
   def __init__(self):
     self.creator = None
@@ -122,7 +123,7 @@ class Wavelet(object):
 class BlipData(object):
   """Data that describes a single blip."""
 
-  java_class = 'com.google.walkabout.api.impl.BlipData'
+  java_class = 'com.google.wave.api.impl.BlipData'
 
   def __init__(self):
     self.annotations = []
@@ -325,7 +326,12 @@ class Context(object):
 
   def GetRootWavelet(self):
     """Returns the root wavelet or None if it is not in this context."""
-    return self.GetWaveletById(ROOT_WAVELET_ID)
+    for wavelet in self._wavelets.values():
+      wavelet_id = wavelet.GetId()
+      if wavelet_id.endswith(ROOT_WAVELET_ID_SUFFIX):
+        return wavelet
+    logging.warning("Could not retrieve root wavelet.")
+    return None
 
   def GetWaves(self):
     """Returns the list of waves associated with this session."""
