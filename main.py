@@ -9,6 +9,8 @@ from api import robot_abstract
 from api import events
 import downy
 
+import optparse
+
 
 def NonInteractiveUI():
   ui = mercurial.ui.ui()
@@ -97,15 +99,27 @@ def downy_app(repo_path):
   return RobotMiddleware(robot_app, hg_app)
 
 
-if __name__=='__main__':
+def main():
   from wsgiref import simple_server, validate
 
   logging.basicConfig(level=logging.INFO)
 
-  # TODO(jacobly): optparse
-  port = 8000
-  repo = '.'
-  app = validate.validator(downy_app(repo))
-  httpd = simple_server.make_server('', port, app)
-  logging.info('Serving on port %d', port)
+  parser = optparse.OptionParser()
+  parser.add_option('-p', '--port', dest='port', type='int', default=8000,
+                    help='Port to listen on')
+  options, args = parser.parse_args()
+  if len(args) == 0:
+    repo_path = '.'
+  elif len(args) == 1:
+    repo_path = args[0]
+  else:
+    print 'Usage: main.py [options] [path to repository]'
+    return
+  app = validate.validator(downy_app(repo_path))
+  httpd = simple_server.make_server('', options.port, app)
+  logging.info('Serving on port %d', options.port)
   httpd.serve_forever()
+
+
+if __name__=='__main__':
+  main()
