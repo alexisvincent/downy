@@ -16,10 +16,9 @@ class Downy(object):
     logging.info(props)
     logging.info(context)
 
-  def on_wavelet_participants_changed(self, props, context):
-    added = props['participantsAdded']
-    if self._in_participant_list(added):
-      self.announce(context)
+  def on_wavelet_self_added(self, props, context):
+    logging.info('Added to wave.')
+    self.announce(context)
 
   def on_form_button_clicked(self, props, context):
     logging.info('button clicked')
@@ -39,6 +38,10 @@ class Downy(object):
   def _get_annotations(self, blip):
     return dict((ann.name, ann) for ann in blip._data.annotations)
 
+  def tip(self):
+    tip_ctx = self.repo[len(self.repo) - 1]
+    return '%s:%s' % (tip_ctx.rev(), tip_ctx.hex()[:10])
+
   def sync_file(self, blip):
     file_name_ann = self._get_annotations(blip).get('downy-file-name')
     if not file_name_ann:
@@ -46,41 +49,52 @@ class Downy(object):
       return
     file_name = file_name_ann.value
     contents = blip.GetDocument().GetText()
+    if contents.startswith(file_name + '\n\n'):
+      contents = contents[len(file_name) + 2:]
     self.repo.wwrite(file_name, contents, '')
 
   def load_file(self, context, file_name):
-    wavelet = context.GetRootWavelet()
-    new_blip = wavelet.CreateBlip()
+    # TODO: check if child blip for file already exists
+    stat_blip = self.find_status_blip(context)
+    if not stat_blip:
+      logging.info('Could not find status blip')
+      return
+
+    # Find insertion point
+    parent_doc = stat_blip.GetDocument()
+    file_name_loc = parent_doc.GetText().find(file_name)
+    if file_name_loc == -1:
+      logging.info('Could not find insertion point for %s', file_name)
+      return
+    # TODO: also account for buttons next to file name
+    insert_point = file_name_loc + len(file_name)
+
+    new_blip = parent_doc.InsertInlineBlip(insert_point)
     doc = new_blip.GetDocument()
     doc.AnnotateDocument('downy-file-name', file_name)
     file_text = self.repo.wread(file_name)
-    doc.AppendText(file_name + '\n\n')
+    doc.AppendText(file_name + '\n\n') # TODO: add <hr> here instead
     doc.AppendText(file_text)
-
-  def root_blip(self, context):
-    wavelet = context.GetRootWavelet()
-    return context.GetBlipById(wavelet.GetRootBlipId())
 
   def command(self, cmd):
     cmd_fn = getattr(commands, cmd)
     cmd_fn(self.repo.ui, self.repo)
 
   def announce(self, context):
-    blip = self.root_blip(context)
-    if not blip:
-      logging.info('Um, no root blip?')
-      return
-    inline_blip = blip.GetDocument().AppendInlineBlip()
-    doc = inline_blip.GetDocument()
-    doc.AnnotateDocument('downy-comm', '1')
-    doc.SetText(
-      'Hello! I\'m Downy. You can give me instructions '
-      'by replying to this blip.')
-    doc.AppendText('\n')
-    doc.AppendText('I know about the following files:\n')
+    new_blip = context.GetRootWavelet().CreateBlip()
+    #new_blip = self.root_blip().GetDocument().AppendInlineBlip()
+    doc = new_blip.GetDocument()
     self.status(doc)
 
+  def find_status_blip(self, context):
+    for blip in context.GetBlips():
+      if 'downy-stat' in self._get_annotations(blip):
+        return blip
+
   def status(self, doc):
+    doc.AppendText('Mercurial repository at %s\n' % self.repo.root)
+    doc.AppendText('Revision %s\n' % self.tip())
+    doc.AnnotateDocument('downy-stat', '1')
     (modified, added, removed, deleted, _, _, clean) = self.repo.status(
       clean=True)
     logging.info('%d modified, %d clean',

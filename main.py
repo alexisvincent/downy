@@ -58,7 +58,8 @@ class SimpleRobotApp(object):
     for event in events:
       self._robot.HandleEvent(event, context)
 
-    json_response = robot_abstract.SerializeContext(context)
+    json_response = robot_abstract.SerializeContext(
+        context, self._robot.version)
     logging.info('Outgoing: %s', json_response)
     return webob.Response(content_type='application/json',
                           body=json_response)
@@ -82,7 +83,7 @@ def downy_app(repo_path):
 
   model = downy.Downy(repo)
   bot = robot_abstract.Robot(
-      'Downy', version=0,
+      'Downy', version=1,
       image_url='http://downybot.appspot.com/public/downy.png',
       profile_url='http://downybot.appspot.com/public/profile.xml')
   bot.RegisterListener(model)
