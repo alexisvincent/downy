@@ -40,6 +40,12 @@ class SimpleRobotApp(object):
     response.cache_control = 'Private'  # XXX
     return response
 
+  def profile(self):
+    xml = self._robot.GetProfileJson()
+    response = webob.Response(content_type='text/xml', body=xml)
+    response.cache_control = 'Private'  # XXX
+    return response
+
   def jsonrpc(self, req):
     json_body = req.body
     if not json_body:
@@ -59,6 +65,8 @@ class SimpleRobotApp(object):
     req = webob.Request(environ)
     if req.path_info == '/_wave/capabilities.xml' and req.method == 'GET':
       response = self.capabilities()
+    elif req.path_info == '/_wave/robot/profile' and req.method == 'GET':
+      response = self.profile()
     elif req.path_info == '/_wave/robot/jsonrpc' and req.method == 'POST':
       response = self.jsonrpc(req)
     else:
@@ -79,6 +87,10 @@ def downy_app(repo_path):
                       model.on_blip_created)
   bot.RegisterHandler(events.WAVELET_PARTICIPANTS_CHANGED,
                       model.on_participants_changed)
+  bot.RegisterHandler(events.BLIP_SUBMITTED,
+                      model.on_blip_submitted)
+  bot.RegisterHandler(events.FORM_BUTTON_CLICKED,
+                      model.on_button_clicked)
 
   robot_app = SimpleRobotApp(bot)
   hg_app = mercurial.hgweb.hgweb(repo)
