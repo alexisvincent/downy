@@ -35,7 +35,7 @@ class SimpleRobotApp(object):
     self._robot = robot
 
   def capabilities(self):
-    xml = self._robot.CapabilitiesXml()
+    xml = self._robot.GetCapabilitiesXml()
     response = webob.Response(content_type='text/xml', body=xml)
     response.cache_control = 'Private'  # XXX
     return response
@@ -90,6 +90,7 @@ if __name__=='__main__':
 
   logging.basicConfig(level=logging.INFO)
 
+  # TODO(jacobly): optparse
   port = 8000
   repo = '.'
   app = validate.validator(downy_app(repo))

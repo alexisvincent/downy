@@ -34,26 +34,29 @@ class Downy(object):
       doc.SetText(
         'Hello! I\'m Downy. You can give me instructions '
         'by replying to this blip.')
-      doc.AnnotateDocument('downy-comm', '1')
-      doc.AppendText('I know about the following files:')
+      doc.AppendText('\n')
+      #doc.AnnotateDocument('downy-comm', '1')
+      doc.AppendText('I know about the following files:\n')
       self.status(doc)
     else:
       logging.info('No such blip: %s', wavelet.GetRootBlipId())
 
   def status(self, doc):
-    (modified, added, removed, deleted, unknown, ignored,
-     clean) = self.repo.status()
-    logging.info('%d modified, %d unknown, %d clean',
-                 len(modified), len(unknown), len(clean))
+    (modified, added, removed, deleted, _, _, clean) = self.repo.status(
+      clean=True)
+    logging.info('%d modified, %d clean',
+                 len(modified), len(clean))
     for file_name in clean:
       doc.AppendElement(document.FormElement(
           document.ELEMENT_TYPE.CHECK, name=file_name))
-      doc.AppendText(file_name)
+      doc.AppendText(file_name + ' ')
       doc.AppendElement(document.FormElement(
-          document.ELEMENT_TYPE.BUTTON, name=file_name, label='Load'))
+          document.ELEMENT_TYPE.BUTTON, name=file_name, label='Load',
+          value='Load'))
+      doc.AppendText('\n')
     doc.AppendElement(document.FormElement(
         document.ELEMENT_TYPE.BUTTON, name='_loadselected',
-        label='Load Selected'))
+        value='Load Selected'))
 
   def _in_participant_list(self, names):
     return any([name.startswith('tdurden.chi') for name in names])
