@@ -10,6 +10,7 @@ as well as some helper functions for web requests and responses.
 
 __author__ = 'davidbyttow@google.com (David Byttow)'
 
+import events
 import model
 import ops
 import simplejson
@@ -88,6 +89,33 @@ class Robot(object):
     self.image_url = image_url
     self.profile_url = profile_url
     self.cron_jobs = []
+
+  def RegisterListener(self, listener):
+    """Registers all event handlers exported by the given object.
+
+    Args:
+      listener: an object (perhaps a RobotListener instance)
+        with methods corresponding to wave events.
+        Methods should be named either in camel case, e.g. 'OnBlipSubmitted',
+        or in lowercase, e.g. 'on_blip_submitted', with names corresponding
+        to the event names in the events module.
+    """
+    def _MakeCamelCase(event_name):
+      return ''.join(word.capitalize() for word in event_name.split('_'))
+
+    for event in dir(events):
+      if event.startswith('_'):
+        continue
+      lowercase_method_name = 'on_' + event.lower()
+      camelcase_method_name = 'On' + _MakeCamelCase(event)
+      if hasattr(listener, lowercase_method_name):
+        handler = getattr(listener, lowercase_method_name)
+      elif hasattr(listener, camelcase_method_name):
+        handler = getattr(listener, camelcase_method_name)
+      else:
+        continue
+      self.RegisterHandler(event, handler)
+    # TODO(davidbyttow): register specialized events like OnRobotAdded
 
   def RegisterHandler(self, event_type, handler):
     """Registers a handler on a specific event type.

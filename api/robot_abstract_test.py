@@ -105,5 +105,38 @@ class TestGetCapabilitiesXml(unittest.TestCase):
     self.assertStringsEqual(expected, xml)
 
 
+class SampleListener(object):
+
+  def on_wavelet_blip_created(self):
+    pass
+
+  def OnBlipSubmitted(self):
+    pass
+
+  def OnBogusEvent(self):
+    pass
+
+  def some_other_method(self):
+    pass
+
+  def _on_document_changed(self):
+    pass
+
+
+class TestRegisterListener(unittest.TestCase):
+
+  def setUp(self):
+    self.robot = robot_abstract.Robot('listener')
+
+  def testRegisterListener(self):
+    listener = SampleListener()
+    self.robot.RegisterListener(listener)
+    self.assertEqual(len(self.robot._handlers), 2)
+    self.assertEqual(self.robot._handlers['BLIP_SUBMITTED'],
+                     [listener.OnBlipSubmitted])
+    self.assertEqual(self.robot._handlers['WAVELET_BLIP_CREATED'],
+                     [listener.on_wavelet_blip_created])
+
+
 if __name__ == '__main__':
   unittest.main()

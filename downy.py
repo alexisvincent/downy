@@ -11,17 +11,17 @@ class Downy(object):
     self.repo = repo
     self.tracked_files = []
 
-  def on_blip_created(self, props, context):
+  def on_wavelet_blip_created(self, props, context):
     logging.info('blip created')
     logging.info(props)
     logging.info(context)
 
-  def on_participants_changed(self, props, context):
+  def on_wavelet_participants_changed(self, props, context):
     added = props['participantsAdded']
     if self._in_participant_list(added):
       self.announce(context)
 
-  def on_button_clicked(self, props, context):
+  def on_form_button_clicked(self, props, context):
     logging.info('button clicked')
     button_name = props['button']
     if button_name.startswith('load_'):

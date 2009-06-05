@@ -85,14 +85,8 @@ def downy_app(repo_path):
       'Downy',
       image_url='http://downybot.appspot.com/public/downy.png',
       profile_url='http://downybot.appspot.com/public/profile.xml')
-  bot.RegisterHandler(events.WAVELET_BLIP_CREATED,
-                      model.on_blip_created)
-  bot.RegisterHandler(events.WAVELET_PARTICIPANTS_CHANGED,
-                      model.on_participants_changed)
-  bot.RegisterHandler(events.BLIP_SUBMITTED,
-                      model.on_blip_submitted)
-  bot.RegisterHandler(events.FORM_BUTTON_CLICKED,
-                      model.on_button_clicked)
+  bot.RegisterListener(model)
+  logging.info('Registered %d handlers', len(bot._handlers))
 
   robot_app = SimpleRobotApp(bot)
   hg_app = mercurial.hgweb.hgweb(repo)
