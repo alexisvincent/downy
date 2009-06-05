@@ -82,7 +82,7 @@ def downy_app(repo_path):
 
   model = downy.Downy(repo)
   bot = robot_abstract.Robot(
-      'Downy',
+      'Downy', version=0,
       image_url='http://downybot.appspot.com/public/downy.png',
       profile_url='http://downybot.appspot.com/public/profile.xml')
   bot.RegisterListener(model)
