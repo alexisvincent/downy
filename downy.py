@@ -1,9 +1,16 @@
 #!/usr/bin/python2.5
 
-import logging
-
 from mercurial import commands
 from api import document
+
+import logging
+
+FILE_STATUSES = 'modified added removed deleted _unknown _ignored clean'.split()
+
+class LocalFile(object):
+  def __init__(self, name, status):
+    self.name = name
+    self.status = status
 
 
 class Downy(object):
@@ -64,7 +71,7 @@ class Downy(object):
     parent_doc = stat_blip.GetDocument()
     file_name_loc = parent_doc.GetText().find(file_name)
     if file_name_loc == -1:
-      logging.info('Could not find insertion point for %s', file_name)
+      logging.warn('Could not find insertion point for %s', file_name)
       return
     # TODO: also account for buttons next to file name
     insert_point = file_name_loc + len(file_name)
@@ -73,7 +80,11 @@ class Downy(object):
     doc = new_blip.GetDocument()
     doc.AnnotateDocument('downy-file-name', file_name)
     file_text = self.repo.wread(file_name)
-    doc.AppendText(file_name + '\n\n') # TODO: add <hr> here instead
+    doc.AppendText(file_name + '\n\n')
+    # Doesn't work. Need to use AppendStyledText.
+    #doc.SetAnnotation(document.Range(0, len(file_name)),
+    #                  'styled-text', 'HEADING4')
+    # TODO: add <hr> here or something
     doc.AppendText(file_text)
 
   def command(self, cmd):
@@ -91,20 +102,28 @@ class Downy(object):
       if 'downy-stat' in self._get_annotations(blip):
         return blip
 
+  def repo_status(self):
+    all_files = []
+    files_by_status = self.repo.status(clean=True)
+    for files, status in zip(files_by_status, FILE_STATUSES):
+      if status.startswith('_'):
+        continue
+      for file_name in files:
+        all_files.append(LocalFile(file_name, status))
+    all_files.sort()
+    return all_files
+
   def status(self, doc):
     doc.AppendText('Mercurial repository at %s\n' % self.repo.root)
     doc.AppendText('Revision %s\n' % self.tip())
     doc.AnnotateDocument('downy-stat', '1')
-    (modified, added, removed, deleted, _, _, clean) = self.repo.status(
-      clean=True)
-    logging.info('%d modified, %d clean',
-                 len(modified), len(clean))
-    for file_name in clean:
+    files = self.repo_status()
+    for f in files:
       doc.AppendElement(document.FormElement(
-          document.ELEMENT_TYPE.CHECK, name='sel_' + file_name))
-      doc.AppendText(file_name + ' ')
+          document.ELEMENT_TYPE.CHECK, name='sel_' + f.name))
+      doc.AppendText(f.name + ' ')
       doc.AppendElement(document.FormElement(
-          document.ELEMENT_TYPE.BUTTON, name='load_' + file_name, label='Load',
+          document.ELEMENT_TYPE.BUTTON, name='load_' + f.name, label='Load',
           value='Load'))
       doc.AppendText('\n')
     doc.AppendElement(document.FormElement(
