@@ -5,6 +5,8 @@
 import webob
 import webob.exc
 
+from api import robot_abstract
+
 import logging
 
 
