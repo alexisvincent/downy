@@ -10,7 +10,7 @@ import downy
 import optparse
 
 
-def non_interactive_ui():
+def _non_interactive_ui():
   ui = mercurial.ui.ui()
   ui.setconfig('ui', 'interactive', 'off')
   return ui
@@ -18,7 +18,7 @@ def non_interactive_ui():
 
 def downy_app(repo_path):
   """Builds a WSGI application to serve both an Hg repository and Downy."""
-  hgui = non_interactive_ui()
+  hgui = _non_interactive_ui()
   repo = mercurial.hg.repository(hgui, path=repo_path)
 
   model = downy.Downy(repo)
