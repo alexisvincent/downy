@@ -82,6 +82,17 @@ class TestUtils(unittest.TestCase):
     self.assertEquals('', util.ToLowerCamelCase('_'))
     self.assertEquals('aBCDEF', util.ToLowerCamelCase('_a_b_c_d_e_f_'))
 
+  def testToUpperCamelCase(self):
+    self.assertEquals('Foo', util.ToUpperCamelCase('foo'))
+    self.assertEquals('FooBar', util.ToUpperCamelCase('foo_bar'))
+    self.assertEquals('FooBar', util.ToUpperCamelCase('foo__bar'))
+    self.assertEquals('FooBarBaz', util.ToUpperCamelCase('foo_bar_baz'))
+    self.assertEquals('F', util.ToUpperCamelCase('f'))
+    self.assertEquals('F', util.ToUpperCamelCase('f_'))
+    self.assertEquals('', util.ToUpperCamelCase(''))
+    self.assertEquals('', util.ToUpperCamelCase('_'))
+    self.assertEquals('ABCDEF', util.ToUpperCamelCase('_a_b_c_d_e_f_'))
+
   def assertListsEqual(self, a, b):
     self.assertEquals(len(a), len(b))
     for i in range(len(a)):
@@ -151,3 +162,7 @@ class TestUtils(unittest.TestCase):
     Test(R(1, 4), R(2, 3), [R(1, 2), R(3, 4)])
     # split with one
     Test(R(1, 4), R(1, 3), [R(3, 4)])
+
+
+if __name__ == '__main__':
+  unittest.main()
