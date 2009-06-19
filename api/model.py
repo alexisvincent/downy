@@ -220,6 +220,30 @@ class Document(object):
     """Returns the raw text content of this document."""
     return self._blip_data.content
 
+  def HasAnnotation(self, name):
+    """Determines if given named annotation is anywhere on this document.
+
+    Args:
+      name: The key name of the annotation.
+
+    Returns:
+      True if the annotation exists.
+    """
+    return bool(self.GetAnnotation(name))
+
+  def GetAnnotation(self, name):
+    """Returns the given named annotation if it is anywhere in the document.
+
+    Args:
+      name: The key name of the annotation.
+
+    Returns:
+      The annotation if it exists, or None if it does not.
+    """
+    for annotation in self._blip_data.annotations:
+      if annotation.name == name:
+        return annotation
+    return None
 
 class Event(object):
   """Data describing a single event."""
