@@ -25,7 +25,13 @@ class Downy(object):
 
   def on_wavelet_self_added(self, props, context):
     logging.info('Added to wave.')
-    self.announce(context)
+    new_blip = context.GetRootWavelet().CreateBlip()
+    self.refresh_status(new_blip.GetDocument())
+
+  #def on_wavelet_created(self, props, context):
+  #  logging.info('New wave.')
+  #  root_blip = context.GetRootWavelet().GetRootBlip()
+  #  self.refresh_status(root_blip.GetDocument())
 
   def on_form_button_clicked(self, props, context):
     logging.info('button clicked')
@@ -40,22 +46,20 @@ class Downy(object):
     blip = context.GetBlipById(props['blipId'])
     if not blip:
       logging.error('Unknown blip ID %s submitted.', props['blipId'])
-    self.sync_file(blip)
-
-  def _get_annotations(self, blip):
-    return dict((ann.name, ann) for ann in blip._data.annotations)
+    self.save_file(blip)
 
   def tip(self):
     tip_ctx = self.repo[len(self.repo) - 1]
     return '%s:%s' % (tip_ctx.rev(), tip_ctx.hex()[:10])
 
-  def sync_file(self, blip):
-    file_name_ann = self._get_annotations(blip).get('downy-file-name')
+  def save_file(self, blip):
+    doc = blip.GetDocument()
+    file_name_ann = doc.GetAnnotations().get('downy-file-name')
     if not file_name_ann:
       logging.info('Ignoring blip %s', blip.GetId())
       return
     file_name = file_name_ann.value
-    contents = blip.GetDocument().GetText()
+    contents = doc.GetText()
     if contents.startswith(file_name + '\n\n'):
       contents = contents[len(file_name) + 2:]
     self.repo.wwrite(file_name, contents, '')
@@ -91,15 +95,9 @@ class Downy(object):
     cmd_fn = getattr(commands, cmd)
     cmd_fn(self.repo.ui, self.repo)
 
-  def announce(self, context):
-    new_blip = context.GetRootWavelet().CreateBlip()
-    #new_blip = self.root_blip().GetDocument().AppendInlineBlip()
-    doc = new_blip.GetDocument()
-    self.status(doc)
-
   def find_status_blip(self, context):
     for blip in context.GetBlips():
-      if 'downy-stat' in self._get_annotations(blip):
+      if blip.GetDocument().HasAnnotation('downy-stat'):
         return blip
 
   def repo_status(self):
@@ -113,22 +111,38 @@ class Downy(object):
     all_files.sort()
     return all_files
 
-  def status(self, doc):
-    doc.AppendText('Mercurial repository at %s\n' % self.repo.root)
-    doc.AppendText('Revision %s\n' % self.tip())
-    doc.AnnotateDocument('downy-stat', '1')
+  def refresh_file_status(self, doc, f):
+    # TODO: check if the file is already opened
+    file_ann = doc.GetAnnotation(f.name + '-controls')
+    if file_ann:
+      logging.info('Refresh %s', file_ann)
+      doc.DeleteRange(file_ann.range)
+    stat_start = len(doc.GetText())
+    # TODO: use f.status
+    doc.AppendElement(document.FormElement(
+        document.ELEMENT_TYPE.CHECK, name='sel_' + f.name))
+    doc.AppendText(f.name + ' ')
+    doc.AppendElement(document.FormElement(
+        document.ELEMENT_TYPE.BUTTON, name='load_' + f.name, label='Load',
+        value='Load'))
+    doc.AppendText('\n')
+    stat_end = len(doc.GetText())
+    logging.info('%s is from %d to %d', f.name, stat_start, stat_end)
+    doc.SetAnnotation(document.Range(stat_start, stat_end),
+                      f.name + '-controls', '1')
+
+  def refresh_status(self, doc):
+    rev = self.tip()
+    intro = 'Mercurial repository at %s\nRevision %s\n' % (self.repo.root, rev)
+    prev_stat = doc.GetAnnotation('downy-stat')
+    if prev_stat:
+      doc.SetTextInRange(prev_stat.range, intro)
+    else:
+      doc.AppendText(intro)
+    doc.AnnotateDocument('downy-stat', rev)
     files = self.repo_status()
     for f in files:
-      doc.AppendElement(document.FormElement(
-          document.ELEMENT_TYPE.CHECK, name='sel_' + f.name))
-      doc.AppendText(f.name + ' ')
-      doc.AppendElement(document.FormElement(
-          document.ELEMENT_TYPE.BUTTON, name='load_' + f.name, label='Load',
-          value='Load'))
-      doc.AppendText('\n')
+      self.refresh_file_status(doc, f)
     doc.AppendElement(document.FormElement(
         document.ELEMENT_TYPE.BUTTON, name='loadselected',
         value='Load Selected'))
-
-  def _in_participant_list(self, names):
-    return any([name.startswith('tdurden.chi') for name in names])
