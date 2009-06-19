@@ -85,8 +85,26 @@ def ToLowerCamelCase(s):
   Returns:
     The lower camel cased string.
   """
-  out = None
-  return reduce(lambda a, b: a + (a and b.capitalize() or b), s.split('_'))
+  upper_cased = ToUpperCamelCase(s)
+  return upper_cased[:1].lower() + upper_cased[1:]
+
+
+def ToUpperCamelCase(s):
+  """Converts a string to upper camel case.
+
+  Examples:
+    foo => Foo
+    foo_bar => FooBar
+    foo__bar => FooBar
+    foo_bar_baz => FooBarBaz
+
+  Args:
+    s: The string to convert to upper camel case.
+
+  Returns:
+    The upper camel cased string.
+  """
+  return ''.join(fragment.capitalize() for fragment in s.split('_'))
 
 
 def DefaultKeyWriter(key_name):

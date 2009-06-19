@@ -36,10 +36,11 @@ class TestHelpers(unittest.TestCase):
 
   def testSerializeContextSansOps(self):
     context, _ = robot_abstract.ParseJSONBody(DEBUG_DATA)
-    serialized = robot_abstract.SerializeContext(context)
+    serialized = robot_abstract.SerializeContext(context, '1')
     self.assertEqual(
         '{"operations": {"javaClass": "java.util.ArrayList", "list": []}, '
-        '"javaClass": "com.google.wave.api.impl.OperationMessageBundle"}',
+        '"javaClass": "com.google.wave.api.impl.OperationMessageBundle", '
+        '"version": "1"}',
         serialized)
 
   def testSerializeContextWithOps(self):
@@ -47,12 +48,13 @@ class TestHelpers(unittest.TestCase):
     wavelet = context.GetWavelets()[0]
     blip = context.GetBlipById(wavelet.GetRootBlipId())
     blip.GetDocument().SetText('Hello, wave!')
-    serialized = robot_abstract.SerializeContext(context)
+    serialized = robot_abstract.SerializeContext(context, '1')
     self.assertEqual(
         '{"operations": {"javaClass": "java.util.ArrayList", "list": ['
         '{"blipId": "wdykLROk*13", "index": -1, "waveletId": "conv+root", "javaClass": "com.google.wave.api.impl.OperationImpl", "waveId": "wdykLROk*11", "property": {"javaClass": "com.google.wave.api.Range", "end": 1, "start": 0}, "type": "DOCUMENT_DELETE"}, '
         '{"blipId": "wdykLROk*13", "index": 0, "waveletId": "conv+root", "javaClass": "com.google.wave.api.impl.OperationImpl", "waveId": "wdykLROk*11", "property": "Hello, wave!", "type": "DOCUMENT_INSERT"}'
-        ']}, "javaClass": "com.google.wave.api.impl.OperationMessageBundle"}',
+        ']}, "javaClass": "com.google.wave.api.impl.OperationMessageBundle", '
+        '"version": "1"}',
         serialized)
 
 
@@ -111,27 +113,31 @@ class TestGetCapabilitiesXml(unittest.TestCase):
 
 
 class SampleListener(object):
+  """Example event listener that exposes some inconsistently-named methods."""
 
-  def on_wavelet_blip_created(self):
+  OnDocumentChanged = 'Non-callable decoy attribute'
+
+  def on_wavelet_blip_created(self, props, context):
     pass
 
-  def OnBlipSubmitted(self):
+  def OnBlipSubmitted(self, props, context):
     pass
 
-  def OnBogusEvent(self):
+  def OnBogusEvent(self, props, context):
     pass
 
-  def some_other_method(self):
+  def some_other_method(self, props, context):
     pass
 
-  def _on_document_changed(self):
+  def _on_document_changed(self, props, context):
     pass
 
 
 class TestRegisterListener(unittest.TestCase):
+  """Tests for the RegisterListener robot method."""
 
   def setUp(self):
-    self.robot = robot_abstract.Robot('listener')
+    self.robot = robot_abstract.Robot('listener', '1')
 
   def testRegisterListener(self):
     listener = SampleListener()
