@@ -93,3 +93,7 @@ class TestElement(unittest.TestCase):
     self.assertEquals(props['url'], 'http://test.com/image.png')
     self.assertEquals(props['width'], 100)
     self.assertEquals(props['height'], 100)
+
+
+if __name__ == '__main__':
+  unittest.main()

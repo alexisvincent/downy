@@ -227,5 +227,5 @@ class TestOpBasedDocument(TestOpBasedClasses):
     self.test_doc.AppendElement("GADGET")
 
 
-
-
+if __name__ == '__main__':
+  unittest.main()

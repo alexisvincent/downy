@@ -363,7 +363,7 @@ class OpBasedDocument(model.Document):
       position: Position to insert the blip at.
 
     Returns:
-      The newly created blip.
+      The BlipData of the blip that was created.
     """
     blip_data = self.__context.builder.DocumentInlineBlipInsert(
         self._blip_data.wave_id,

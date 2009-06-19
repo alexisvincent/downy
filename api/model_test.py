@@ -86,3 +86,7 @@ class TestWaveModel(unittest.TestCase):
     self.assertEquals(data['properties'], event_data.properties)
     self.assertEquals(data['timestamp'], event_data.timestamp)
     self.assertEquals(data['modifiedBy'], event_data.modified_by)
+
+
+if __name__ == '__main__':
+  unittest.main()
