@@ -201,20 +201,6 @@ class OpBasedDocument(model.Document):
     super(OpBasedDocument, self).__init__(blip_data)
     self.__context = context
 
-  def HasAnnotation(self, name):
-    """Determines if given named annotation is anywhere on this document.
-
-    Args:
-      name: The key name of the annotation.
-
-    Returns:
-      True if the annotation exists.
-    """
-    for annotation in self._blip_data.annotations:
-      if annotation.name == name:
-        return True
-    return False
-
   def SetText(self, text):
     """Clears and sets the text of this document.
 
