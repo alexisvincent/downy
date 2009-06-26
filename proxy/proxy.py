@@ -4,9 +4,9 @@ from google.appengine.api import urlfetch
 from google.appengine.ext import webapp
 import google.appengine.ext.webapp.util
 
-
-REMOTE_ROBOT = 'http://artdent-chi.homelinux.net'
+REMOTE_ROBOT = 'http://downy.artdent.homelinux.net'
 ATTEMPTS = 3
+
 
 class Proxy(webapp.RequestHandler):
 
@@ -16,7 +16,8 @@ class Proxy(webapp.RequestHandler):
     robot_response = None
     for i in range(ATTEMPTS):
       try:
-        robot_response = urlfetch.fetch(path, method=method, deadline=10)
+        robot_response = urlfetch.fetch(path, method=method, deadline=10,
+                                        payload=self.request.body)
         logging.info('remote response: %d', robot_response.status_code)
       except urlfetch.DownloadError, e:
         logging.error('Download error: %s', e)
