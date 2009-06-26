@@ -43,6 +43,10 @@ class Proxy(webapp.RequestHandler):
         'Either the host is down or urlfetch is still broken.'
         % (path, ATTEMPTS))
     self.response.set_status(robot_response.status_code)
+    # Only copy over Content-Type header for now
+    for header in ['Content-Type']:
+      if header in robot_response.headers:
+        self.response.add_header(header, robot_response.headers[header])
     self.response.out.write(robot_response.content)
 
   def get(self):
