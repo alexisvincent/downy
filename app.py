@@ -47,8 +47,6 @@ class SimpleRobotApp(object):
 
   def jsonrpc(self, req):
     json_body = req.body
-    if not json_body:
-      return
     logging.info('Incoming: %s', json_body)
 
     context, events = robot_abstract.ParseJSONBody(json_body)

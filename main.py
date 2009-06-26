@@ -1,6 +1,7 @@
 #!/usr/bin/python2.5
 
 import logging
+import os
 import mercurial
 
 from api import robot_abstract
@@ -58,3 +59,6 @@ def main():
 
 if __name__=='__main__':
   main()
+else:
+  # Mod_wsgi application object
+  application = downy_app(os.path.dirname(__file__))
