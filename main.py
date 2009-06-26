@@ -41,6 +41,7 @@ def downy_app(repo_path):
   model = downy.Downy(repo)
   bot = robot_abstract.Robot(
       'Downy', version='1',
+      # Mercurial droplets logo used in downy with permission from Matt Mackall.
       image_url='http://downybot.appspot.com/public/downy.png',
       profile_url='http://downybot.appspot.com/public/profile.xml')
   bot.RegisterListener(model)
