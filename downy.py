@@ -68,7 +68,7 @@ class Downy(object):
 
   def save_file(self, blip):
     doc = blip.GetDocument()
-    file_name_ann = doc.GetAnnotations().get('downy-file-name')
+    file_name_ann = doc.GetAnnotation('downy-file-name')
     if not file_name_ann:
       logging.info('Ignoring blip %s', blip.GetId())
       return
