@@ -1,5 +1,7 @@
 #!/usr/bin/python2.5
 
+"""Main entry point for Downy."""
+
 import logging
 import os
 import mercurial
