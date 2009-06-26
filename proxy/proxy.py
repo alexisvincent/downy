@@ -35,6 +35,7 @@ class Proxy(webapp.RequestHandler):
         robot_response = urlfetch.fetch(path, method=method, deadline=10,
                                         payload=self.request.body)
         logging.info('remote response: %d', robot_response.status_code)
+        break
       except urlfetch.DownloadError, e:
         logging.error('Download error: %s', e)
     if not robot_response:
@@ -46,7 +47,7 @@ class Proxy(webapp.RequestHandler):
     # Only copy over Content-Type header for now
     for header in ['Content-Type']:
       if header in robot_response.headers:
-        self.response.add_header(header, robot_response.headers[header])
+        self.response.headers[header] = robot_response.headers[header]
     self.response.out.write(robot_response.content)
 
   def get(self):
