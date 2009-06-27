@@ -122,7 +122,7 @@ class Downy(object):
         continue
       for file_name in files:
         all_files.append(LocalFile(file_name, status))
-    all_files.sort()
+    all_files.sort(key=lambda f: f.name)
     return all_files
 
   def refresh_file_status(self, doc, f):
