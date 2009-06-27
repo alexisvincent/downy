@@ -19,6 +19,7 @@
 import logging
 import os
 import mercurial
+import mercurial.dispatch
 
 from api import robot_abstract
 import app
@@ -26,6 +27,10 @@ import downy
 
 import optparse
 
+USAGE = """Usage: main.py [options] [path to repository]
+
+If no path is specified, and the current directory is inside a Mercurial
+repository, that repository will be served."""
 
 def _non_interactive_ui():
   ui = mercurial.ui.ui()
@@ -56,17 +61,24 @@ def main():
 
   logging.basicConfig(level=logging.INFO)
 
-  parser = optparse.OptionParser()
+  parser = optparse.OptionParser(usage=USAGE)
   parser.add_option('-p', '--port', dest='port', type='int', default=8000,
                     help='Port to listen on')
   options, args = parser.parse_args()
   if len(args) == 0:
-    repo_path = '.'
+    path = os.getcwd()
   elif len(args) == 1:
-    repo_path = args[0]
+    path = args[0]
   else:
-    print 'Usage: main.py [options] [path to repository]'
+    parser.print_help()
     return
+  repo_path = mercurial.dispatch._findrepo(path)
+  if not repo_path:
+    print 'No Mercurial repository found for', path
+    print
+    parser.print_help()
+    return
+  logging.info('Mercurial repository %s', repo_path)
   app = validate.validator(downy_app(repo_path))
   httpd = simple_server.make_server('', options.port, app)
   logging.info('Serving on port %d', options.port)
